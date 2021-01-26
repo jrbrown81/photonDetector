@@ -38,11 +38,14 @@ public :
    ULong64_t       tDiff;
    Float_t         eBuff;
    Float_t 			 e;
+   UShort_t			energyBuff[8]={0,0,0,0,0,0,0,0};
    
    UInt_t          mult;
    UInt_t          mult_eCut;
    UInt_t			 lastHit;
    UInt_t			 firstHit;
+   
+   UInt_t			hits[8]={0,0,0,0,0,0,0,0};
    
    Float_t			thresh[8]={5,10,15,20,25,30,35,40};
    Float_t			multOverThresh[8];
@@ -59,7 +62,9 @@ public :
    
    TH1F* hitPattern_h;
    TH1F* hitPattern_eCut_h;
+   TH1F* hitPattArr_h[8];
    TH1F* mult_h;
+   TH1F* mult2_h;
    TH1F* tDiff_h;
    TH1F* tDiffLong_h;
    TH2F* coincPattern_h;
@@ -81,6 +86,7 @@ public :
    
    TH1F* energy_h[8];
    TH1F* energy2_h[8];
+   TH1F* energy3_h[8];
    TH1F* energyRaw_h[8];
    TH2F* EvsChn_h;
    

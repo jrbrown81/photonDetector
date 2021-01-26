@@ -55,10 +55,13 @@ void photonSorter::Loop(Int_t toProcess=0)
 		energyRaw_h[i] = new TH1F(Form("energyRaw_%i_h",i),Form("Energy (Raw), channel %i",i),1000,0,5000);
 		energy_h[i] = new TH1F(Form("energy_%i_h",i),Form("Energy, channel %i",i),1000,0,50);
 		energy2_h[i] = new TH1F(Form("energy2_%i_h",i),Form("Energy, channel %i (mult>=2)",i),1000,0,5000);
+		energy3_h[i] = new TH1F(Form("energy3_%i_h",i),Form("Energy, channel %i (top and bottom hit)",i),1000,0,5000);
 //   	energyCal_h[i] = new TH1F(Form("energyCal_%i_h",i),Form("Energy (calibrated), channel %i",i),1000,0,50);
+		hitPattArr_h[i] = new TH1F(Form("hitPattern_%i_h",i),Form("Hit Pattern for mult=%i",i+1),9,0,9);
 	}
    
    mult_h = new TH1F("mult_h",Form("Multiplicity (tDiff<%llu ns)",tCut),9,0,9);
+   mult2_h = new TH1F("mult2_h",Form("Multiplicity (tDiff<%llu ns, top and bottom hit)",tCut),9,0,9);
    tDiff_h = new TH1F("tDiff_h","Time Difference",1000,0,1e3);
    tDiff_h->GetXaxis()->SetTitle("Time Difference (ns)");
    tDiffLong_h = new TH1F("tDiffLong_h","Time Difference (long)",10000,0,5e8);
@@ -114,6 +117,10 @@ void photonSorter::Loop(Int_t toProcess=0)
       
 //      if(tDiff==0) {
       if(tDiff<tCut) {		// coincidnece condition
+			mult++;
+			hits[Channel]++;
+			energyBuff[Channel]=Energy;
+      
 			coincPattern_h->Fill(chnBuff,Channel);
 			coincPattern_h->Fill(Channel,chnBuff);
 //			if(mult>2) {
@@ -135,7 +142,6 @@ void photonSorter::Loop(Int_t toProcess=0)
 //				}
 			}
 			
-			mult++;
 			if(e>eCut) {
 				mult_eCut++;
 				if(Channel>lastHit) lastHit=Channel;
@@ -163,7 +169,6 @@ void photonSorter::Loop(Int_t toProcess=0)
 			lastHit_h->Fill(lastHit);
 			firstHit_h->Fill(firstHit);
 			lastHitVsMult_h->Fill(lastHit,mult_eCut);
-			mult = 1;
 			for(int i=0;i<8;i++) {
 				if(multOverThresh[i]!=0) multVsThresh_h->Fill(thresh[i],multOverThresh[i]);
 				if(e>thresh[i]) multOverThresh[i]=1;
@@ -190,15 +195,25 @@ void photonSorter::Loop(Int_t toProcess=0)
 //				topHit=0;
 //				bottomHit=0;
 			}
+			for(int fibre=0;fibre<8;fibre++) if(hits[fibre]==1) hitPattArr_h[mult-1]->Fill(fibre);
+			if(hits[0]!=0 && hits[7]!=0) {
+				mult2_h->Fill(mult);
+				for(int i=0;i<8;i++) energy3_h[i]->Fill(energyBuff[i]);
+			}
+			
+			// Reset variables
+			mult = 1;
+			for(int i=0;i<8;i++) {
+				hits[i]=0;
+				energyBuff[i]=0;
+			}
+			hits[Channel]++;
+			energyBuff[Channel]=Energy;
 		}	// end of not coincidence
       
       tDiff_h->Fill(tDiff);
       tDiffLong_h->Fill(tDiff);
-      
-      tBuff = Timestamp;
-      chnBuff = Channel;
-      eBuff = e;
-      
+            
       energy_h[Channel]->Fill(e);
 //      if(mult>=2) energy2_h[Channel]->Fill(e);
 		if(mult>=2) energy2_h[Channel]->Fill(Energy);
@@ -206,6 +221,11 @@ void photonSorter::Loop(Int_t toProcess=0)
       EvsChn_h->Fill(Channel,e);
       hitPattern_h->Fill(Channel);
       if(e>eCut) hitPattern_eCut_h->Fill(Channel);
+      
+      // Set buffers
+      tBuff = Timestamp;
+      chnBuff = Channel;
+      eBuff = e;
    }	// End of loop over entries
    
    TCanvas* c1 = new TCanvas("basics_c","c1");
@@ -230,6 +250,7 @@ void photonSorter::Loop(Int_t toProcess=0)
    coincPattern_c_h->SetStats(0);
    coincPattern_c_h->Draw("colz");
    c1->cd(8);
+   mult2_h->Draw();
 //   coincEnergy_e_h->SetStats(0);
 //   coincEnergy_e_h->Draw("colz");
 
@@ -249,9 +270,11 @@ void photonSorter::Loop(Int_t toProcess=0)
 	TCanvas* energyRaw_c=new TCanvas("energyRaw_c","Energy Spectra");
 	TCanvas* energy_c=new TCanvas("energy_c","Raw Energy Spectra");
 	TCanvas* energyMult_c=new TCanvas("energyMult_c","Energy Spectra for mult>=2");
+	TCanvas* c2=new TCanvas("energyTopBottom_c","Energy Spectra for top and bottom hits");
 	energyRaw_c->Divide(4,2);
 	energy_c->Divide(4,2);
 	energyMult_c->Divide(4,2);
+	c2->Divide(4,2);
 	for(int i=0; i<8; i++) {
 		energy_c->cd(i+1);
 		energy_h[i]->Draw();
@@ -263,6 +286,12 @@ void photonSorter::Loop(Int_t toProcess=0)
 		energyRaw_h[i]->Draw();
 		energy2_h[i]->SetLineColor(2);
 		energy2_h[i]->Draw("same");
+		c2->cd(i+1);
+		gPad->SetLogy(1);
+		energyRaw_h[i]->Draw();
+		energy2_h[i]->Draw("same");
+		energy3_h[i]->SetLineColor(3);
+		energy3_h[i]->Draw("same");
 	}
 	
 	TCanvas* c3=new TCanvas("energySpec_c","Energy Spectra (log)");
@@ -283,6 +312,13 @@ void photonSorter::Loop(Int_t toProcess=0)
 	c4->GetPad(3)->SetLogz(1);
 	EvsChn_h->SetStats(0);
 	EvsChn_h->Draw("colz");
+	
+	TCanvas* c5 = new TCanvas("hitPattMult_c","Hit Patterns for different multiplicities");
+	c5->Divide(4,2);
+	for(int i=0;i<8;i++) {
+		c5->cd(i+1);
+		hitPattArr_h[i]->Draw();
+	}
 
 	TCanvas* c6 = new TCanvas("lastHits_c","Last hit plots");
 	c6->Divide(2,2);
@@ -316,10 +352,10 @@ void photonSorter::Loop(Int_t toProcess=0)
 	coinc_c->Write();
 	energyRaw_c->Write();
 	energyMult_c->Write();
-//	c2->Write();
+	c2->Write();
 	c3->Write();
 	c4->Write();
-//	c5->Write();
+	c5->Write();
 	c6->Write();
 	c7->Write();
 	c8->Write();
