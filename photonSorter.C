@@ -387,3 +387,12 @@ void run(TString input, Int_t toProcess=0)
 
 	delete tree;
 }
+
+void help()
+{
+  cout << "\n run(TString input, Int_t toProcess=0)\n" << endl;
+}
+
+void Help(){help();}
+void Usage(){help();}
+void usage(){help();}

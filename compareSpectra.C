@@ -1,4 +1,4 @@
-void compareSpectra(Int_t run1, Int_t run2=0, Int_t run3=0, Int_t run4=0, Int_t run5=0, Int_t run6=0){
+void compareSpectra(Int_t run1, Int_t run2=0, Int_t run3=0, Int_t run4=0, Int_t run5=0, Int_t run6=0, TString opt="F"){
 
 	gStyle->SetOptStat(0);
 	Int_t nFiles=0;
@@ -19,7 +19,9 @@ void compareSpectra(Int_t run1, Int_t run2=0, Int_t run3=0, Int_t run4=0, Int_t 
 	while(run[nFiles]!=0) nFiles++;
 
 	TFile *file[nFiles];
-	for(int i=0;i<nFiles;i++) file[i] = TFile::Open(Form("run_%i/FILTERED/DataF_run_%i_out.root",run[i],run[i]));
+	if(opt=="F") for(int i=0;i<nFiles;i++) file[i] = TFile::Open(Form("run_%i/FILTERED/DataF_run_%i_out.root",run[i],run[i]));
+	if(opt=="U") for(int i=0;i<nFiles;i++) file[i] = TFile::Open(Form("run_%i/UNFILTERED/Data_run_%i_out.root",run[i],run[i]));
+	if(opt=="R") for(int i=0;i<nFiles;i++) file[i] = TFile::Open(Form("run_%i/RAW/DataR_run_%i_out.root",run[i],run[i]));
 
 	TH1F* spec[nFiles][8];
 
@@ -44,3 +46,12 @@ void compareSpectra(Int_t run1, Int_t run2=0, Int_t run3=0, Int_t run4=0, Int_t 
 	}
 
 }
+
+void help() {
+	cout << "\n compareSpectra(Int_t run1, Int_t run2=0, Int_t run3=0, Int_t run4=0, Int_t run5=0, Int_t run6=0, TString opt=\"F\")\n" << endl;
+	cout << "Overlay spectra from up to 6 runs. Gets data from processed data files (i.e. '..._out.root') so need to have run photonSorter.C first.\n" << endl;
+	cout << "Options 'opt=F/U/R' to select FILTERED, UNFILTERED or RAW data." << endl;
+}
+void Help(){help();}
+void usage(){help();}
+void Usage(){help();}
